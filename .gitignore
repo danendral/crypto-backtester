@@ -13,7 +13,8 @@ env.bak/
 venv.bak/
 
 # Project specific
-crypto_backtest.db
+db/
+outputs/
 
 # VS Code
 .vscode/

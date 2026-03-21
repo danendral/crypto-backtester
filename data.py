@@ -3,8 +3,10 @@ import pandas_ta as ta
 import requests
 import sqlite3
 import time
+import os
 
-DB_NAME = "crypto_backtest.db"
+os.makedirs('db', exist_ok=True)
+DB_NAME = "db/crypto_backtest.db"
 BASE_URL = "https://data-api.binance.vision/api/v3/klines"
 
 def init_db():
