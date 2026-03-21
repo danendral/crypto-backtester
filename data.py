@@ -2,6 +2,7 @@ import pandas as pd
 import pandas_ta as ta
 import requests
 import sqlite3
+import time
 
 DB_NAME = "crypto_backtest.db"
 BASE_URL = "https://data-api.binance.vision/api/v3/klines"
@@ -26,19 +27,39 @@ def init_db():
     return conn
 
 def fetch_binance_ohlcv(symbol, interval, limit=500):
-    """Fetches OHLCV data directly from the Binance public REST API."""
-    params = {
-        'symbol': symbol,
-        'interval': interval,
-        'limit': limit
-    }
-    response = requests.get(BASE_URL, params=params)
-    response.raise_for_status()
-    data = response.json()
+    """Fetches OHLCV data from Binance with pagination to support huge limits."""
+    all_data = []
+    end_time = None
+    remaining = limit
     
-    # Binance kline format:
-    # [open_time, open, high, low, close, volume, close_time, quote_asset_volume, number_of_trades, taker_buy_base_asset_volume, taker_buy_quote_asset_volume, ignore]
-    df = pd.DataFrame(data, columns=[
+    while remaining > 0:
+        batch_limit = min(remaining, 1000)
+        params = {
+            'symbol': symbol,
+            'interval': interval,
+            'limit': batch_limit
+        }
+        if end_time:
+            params['endTime'] = int(end_time)
+            
+        print(f"Fetching {batch_limit} candles... (remaining: {remaining})")
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if not data:
+            break
+            
+        # Prepend the older data to our full list
+        all_data = data + all_data
+        
+        # Binance open_time is the first element of each candle.
+        # The next fetch should end 1 millisecond before the oldest candle in this batch.
+        end_time = data[0][0] - 1
+        remaining -= len(data)
+        time.sleep(0.1) # Respect Binance rate limits
+        
+    df = pd.DataFrame(all_data, columns=[
         'open_time', 'open', 'high', 'low', 'close', 'volume',
         'close_time', 'quote_volume', 'count', 'taker_buy_volume', 'taker_buy_quote_volume', 'ignore'
     ])
@@ -49,7 +70,6 @@ def fetch_binance_ohlcv(symbol, interval, limit=500):
         df[col] = df[col].astype(float)
         
     df['open_time'] = pd.to_numeric(df['open_time'])
-    
     return df
 
 def get_ohlcv(symbol, interval, limit=500):

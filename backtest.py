@@ -183,23 +183,26 @@ def run_backtest(df, strategy_func, initial_capital=10000.0):
 
 if __name__ == "__main__":
     from data import get_ohlcv
-    import gzip
     
-    # Let's fetch a chunk of data and test
     print("Fetching data to test backtester...")
-    # Using 1h interval, larger limit so we can see some trades
-    df = get_ohlcv("BTCUSDT", "1h", limit=1000)
+    # Fetching over a full year of hourly data (~416 days)
+    df = get_ohlcv("BTCUSDT", "1h", limit=10000)
     
-    print("\n--- Running EMA Crossover Backtest ---")
-    trades, metrics, equity = run_backtest(df, strategy_ema_crossover)
+    strategies = [
+        ("EMA Crossover", strategy_ema_crossover),
+        ("RSI Mean Reversion", strategy_rsi_mean_reversion),
+        ("Combined (EMA + RSI)", strategy_combined)
+    ]
     
-    print("\nTrades Executed:", len(trades))
-    if not trades.empty:
-        print(trades[['direction', 'entry_time', 'result', 'pnl']].tail())
+    for name, strat_func in strategies:
+        print(f"\n{'='*40}")
+        print(f"--- Running {name} Backtest ---")
+        trades, metrics, equity = run_backtest(df.copy(), strat_func)
         
-    print("\nMetrics:")
-    for k, v in metrics.items():
-        if isinstance(v, float):
-            print(f"  {k}: {v:.4f}")
-        else:
-            print(f"  {k}: {v}")
+        print(f"Trades Executed: {len(trades)}")
+        print("Metrics:")
+        for k, v in metrics.items():
+            if isinstance(v, float):
+                print(f"  {k}: {v:.4f}")
+            else:
+                print(f"  {k}: {v}")
