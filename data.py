@@ -1,5 +1,5 @@
 import pandas as pd
-import pandas_ta as ta
+import numpy as np
 import requests
 import sqlite3
 import time
@@ -116,12 +116,20 @@ def get_ohlcv(symbol, interval, limit=500):
     # Format times properly for human readability
     df_final['timestamp'] = pd.to_datetime(df_final['open_time'], unit='ms')
     
-    # Compute indicators
-    # pandas-ta computes standard names: EMA_20, EMA_50, RSI_14, ATRr_14
-    df_final.ta.ema(length=20, append=True)
-    df_final.ta.ema(length=50, append=True)
-    df_final.ta.rsi(length=14, append=True)
-    df_final.ta.atr(length=14, append=True)
+    # Compute indicators (pure pandas/numpy, no pandas-ta dependency)
+    df_final['EMA_20'] = df_final['close'].ewm(span=20, adjust=False).mean()
+    df_final['EMA_50'] = df_final['close'].ewm(span=50, adjust=False).mean()
+
+    delta = df_final['close'].diff()
+    gain = delta.clip(lower=0).ewm(alpha=1/14, min_periods=14, adjust=False).mean()
+    loss = (-delta.clip(upper=0)).ewm(alpha=1/14, min_periods=14, adjust=False).mean()
+    df_final['RSI_14'] = 100 - (100 / (1 + gain / loss))
+
+    high_low = df_final['high'] - df_final['low']
+    high_close = (df_final['high'] - df_final['close'].shift()).abs()
+    low_close = (df_final['low'] - df_final['close'].shift()).abs()
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    df_final['ATRr_14'] = tr.ewm(alpha=1/14, min_periods=14, adjust=False).mean()
     
     return df_final
 
