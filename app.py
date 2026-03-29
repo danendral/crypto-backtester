@@ -89,10 +89,13 @@ elif page == "Live Market Pulse":
         # Fetch latest 100 1-hour candles bypassing local cache strictly for live feed
         df = fetch_binance_ohlcv(symbol, "1h", limit=100)
         
-        # Calculate indicators manually
-        df.ta.ema(length=20, append=True)
-        df.ta.ema(length=50, append=True)
-        df.ta.rsi(length=14, append=True)
+        # Calculate indicators
+        df['EMA_20'] = df['close'].ewm(span=20, adjust=False).mean()
+        df['EMA_50'] = df['close'].ewm(span=50, adjust=False).mean()
+        delta = df['close'].diff()
+        gain = delta.clip(lower=0).ewm(alpha=1/14, min_periods=14, adjust=False).mean()
+        loss = (-delta.clip(upper=0)).ewm(alpha=1/14, min_periods=14, adjust=False).mean()
+        df['RSI_14'] = 100 - (100 / (1 + gain / loss))
         
         latest_candle = df.iloc[-1]
         current_price = latest_candle['close']
