@@ -135,13 +135,15 @@ elif page == "AI Strategy Builder":
         st.warning("Please enter your Anthropic API Key in the sidebar to use this feature.")
         st.stop()
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         ai_symbol = st.selectbox("Symbol", ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"], key="ai_symbol")
     with col2:
         ai_interval = st.selectbox("Interval", ["1h", "4h", "1d"], key="ai_interval")
     with col3:
         ai_limit = st.slider("Lookback Candles", min_value=100, max_value=5000, value=1000, step=100, key="ai_limit")
+    with col4:
+        ai_model = st.selectbox("Claude Model", ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"], key="ai_model")
 
     user_description = st.text_area(
         "Describe your strategy",
@@ -192,7 +194,7 @@ Output ONLY the Python function. No explanation, no markdown fences, no comments
                     from anthropic import Anthropic
                     client = Anthropic(api_key=api_key)
                     response = client.messages.create(
-                        model="claude-sonnet-4-20250514",
+                        model=ai_model,
                         max_tokens=1024,
                         system=SYSTEM_PROMPT,
                         messages=[{"role": "user", "content": user_description}]
