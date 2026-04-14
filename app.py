@@ -196,7 +196,7 @@ Output ONLY the Python function. No explanation, no markdown fences, no comments
                     response = client.messages.create(
                         model=ai_model,
                         max_tokens=1024,
-                        system=SYSTEM_PROMPT,
+                        system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
                         messages=[{"role": "user", "content": user_description}]
                     )
                     generated = response.content[0].text.strip()
