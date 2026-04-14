@@ -59,7 +59,7 @@ if page == "Backtest Runner":
             st.subheader("Equity Curve")
             fig = px.line(equity_curve, title=f"Equity Curve: {strategy_name} on {symbol} ({interval})")
             fig.update_layout(xaxis_title="Time", yaxis_title="Account Balance ($)", showlegend=False)
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
 elif page == "Trades Log":
     st.title("Trades Log")
@@ -78,7 +78,7 @@ elif page == "Trades Log":
         else:
             styled_df = df.style.applymap(highlight_pnl, subset=['result'])
             
-        st.dataframe(styled_df, width="stretch")
+        st.dataframe(styled_df, use_container_width=True)
     elif 'trades_df' in st.session_state and st.session_state['trades_df'].empty:
         st.warning("No trades were executed in this dataset.")
     else:
@@ -243,7 +243,7 @@ Output ONLY the Python function. No explanation, no markdown fences, no comments
                     st.subheader("Equity Curve")
                     fig = px.line(equity_curve, title=f"Equity Curve: AI Strategy on {ai_symbol} ({ai_interval})")
                     fig.update_layout(xaxis_title="Time", yaxis_title="Account Balance ($)", showlegend=False)
-                    st.plotly_chart(fig, width="stretch")
+                    st.plotly_chart(fig, use_container_width=True)
 
                 except Exception as e:
                     st.error(f"Strategy execution failed: {e}")
